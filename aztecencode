@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+
+import argparse
+import aztec_code_generator
+import sys
+
+PILLOW_FORMATS = sorted("EPS TIFF GIF BMP PNG PPM JPEG JPEG2000".split())
+ASCII_FORMATS = "ASCII".split()
+UTF8_FORMATS = "UTF8 ANSIUTF8".split()
+
+DEFAULT_EC_PERCENT = 23
+DEFAULT_MODULE_SIZE = 3
+DEFAULT_MARGIN_WIDTH = 2
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Encode input data in an Aztec Code and save as an image. "
+    )
+
+    parser.add_argument(
+        "-o",
+        help="write image to FILENAME. If '-' is specified, the result will be output to standard output. ",
+        metavar="FILENAME",
+    )
+    parser.add_argument(
+        "-s",
+        type=int,
+        help=f"specify size of matrix. ",
+        metavar="NUMBER",
+    )
+    parser.add_argument(
+        "-c",
+        action='store_true',
+        help="encode in a compact Aztec Code. "
+    )
+    parser.add_argument(
+        "-e",
+        default=DEFAULT_EC_PERCENT,
+        type=int,
+        choices=range(0,100),
+        help=f"specify percentage of symbol capacity for error correction (default={DEFAULT_EC_PERCENT}%%).",
+        metavar="NUMBER",
+    )
+    parser.add_argument(
+        "-d",
+        default=DEFAULT_MODULE_SIZE,
+        type=int,
+        help=f"specify module size in dots (pixels). (default={DEFAULT_MODULE_SIZE})",
+        metavar="NUMBER",
+    )
+    parser.add_argument(
+        "-m",
+        default=DEFAULT_MARGIN_WIDTH,
+        type=int,
+        help=f"specify the width of the margins. (default={DEFAULT_MARGIN_WIDTH})",
+        metavar="NUMBER",
+    )
+    parser.add_argument(
+        "-t",
+        help=f"""specify the type of the generated image. Must be
+        {", ".join(ASCII_FORMATS + UTF8_FORMATS)}, 
+        or a file format write supported by Pillow, such as
+        {", ".join(PILLOW_FORMATS)}. For a complete list, see 
+        https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html. 
+        """,
+        metavar="FORMAT"
+    )
+
+    args = parser.parse_args()
+
+    input_file = sys.stdin # to extend in the future
+    redirect_output = args.o not in [None, "-"]
+
+    format_ = args.t.upper() if args.t != None else None
+    format_ = "UTF8" if (format_ == None and not redirect_output) else format_
+    f = 0
+    if format_ in ASCII_FORMATS:
+        f = 1
+    elif format_ in UTF8_FORMATS:
+        f = 2
+
+    data = input_file.read()
+    code = aztec_code_generator.AztecCode(data, size=args.s, compact=args.c, ec_percent=args.e)  # todooooo
+    
+    if f > 0:
+        if redirect_output:
+            stdout = sys.stdout
+            sys.stdout = open(args.o, "wb")
+        if f == 1:
+            code.print_out(border=args.m)
+        elif f == 2:
+            code.print_fancy(border=args.m)
+        if redirect_output:
+            sys.stdout.close()
+            sys.stdout = stdout
+
+    else:
+        fp = args.o if redirect_output else sys.stdout
+        code.save(fp, module_size=args.d, border=args.m, format=format_)
