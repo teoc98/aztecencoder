@@ -13,6 +13,6 @@ Clone and install requirements with `pip3 install -r requirements.txt`.
 - [Aztec Code generator](https://github.com/dlenski/aztec_code_generator)
 - [Pillow](https://pillow.readthedocs.io)
 
-## License:
+## License
 
 Released under [GNU General Public License version 3](https://github.com/teoc98/aztecencoder/blob/master/LICENSE).
